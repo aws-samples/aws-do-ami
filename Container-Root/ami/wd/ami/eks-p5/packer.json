@@ -1,0 +1,131 @@
+{
+  "min_packer_version": "1.9.0",
+  "variables": {
+    "env": "dev"
+  },
+  "builders": [
+    {
+      "type": "amazon-ebs",
+      "region": "{{user `aws_region`}}",
+      "instance_type": "{{user `instance_type`}}",
+      "source_ami_filter": {
+        "filters": {
+          "virtualization-type": "hvm",
+          "name": "amazon-eks-gpu-node-{{user `eks_version`}}*",
+          "architecture": "x86_64",
+          "root-device-type": "ebs"
+        },
+        "owners": [
+          "amazon"
+        ],
+        "most_recent": true
+      },
+      "ssh_username": "ec2-user",
+      "ami_name": "{{user `name`}}-efa-{{ user `eks_version`}}-{{isotime \"20130915120000\" | clean_resource_name}}",
+      "shutdown_behavior": "terminate",
+      "associate_public_ip_address": "{{user `public_ip`}}",
+      "encrypt_boot": "{{user `encrypt_boot`}}",
+      "tags": {
+          "Name": "{{user `name`}}-efa-{{user `efa_version`}}",
+          "Env": "{{user `env`}}",
+          "OS": "Amazon Linux 2",
+          "Source_AMI": "{{ .SourceAMI }}"
+      },
+      "ssh_interface": "{{user `ssh_interface`}}",
+      "communicator": "ssh",
+      "launch_block_device_mappings": [
+        {
+          "device_name": "/dev/xvda",
+          "volume_size": "{{ user `volume_size_gb`}}",
+          "delete_on_termination": true
+        }
+      ],
+      "temporary_iam_instance_profile_policy_document": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "ssm:DescribeAssociation",
+              "ssm:GetDeployablePatchSnapshotForInstance",
+              "ssm:GetDocument",
+              "ssm:DescribeDocument",
+              "ssm:GetManifest",
+              "ssm:GetParameter",
+              "ssm:GetParameters",
+              "ssm:ListAssociations",
+              "ssm:ListInstanceAssociations",
+              "ssm:PutInventory",
+              "ssm:PutComplianceItems",
+              "ssm:PutConfigurePackageResult",
+              "ssm:UpdateAssociationStatus",
+              "ssm:UpdateInstanceAssociationStatus",
+              "ssm:UpdateInstanceInformation"
+            ],
+            "Resource": "*"
+          },
+          {
+            "Effect": "Allow",
+            "Action": [
+              "ssmmessages:CreateControlChannel",
+              "ssmmessages:CreateDataChannel",
+              "ssmmessages:OpenControlChannel",
+              "ssmmessages:OpenDataChannel"
+            ],
+            "Resource": "*"
+          },
+          {
+            "Effect": "Allow",
+            "Action": [
+              "ec2messages:AcknowledgeMessage",
+              "ec2messages:DeleteMessage",
+              "ec2messages:FailMessage",
+              "ec2messages:GetEndpoint",
+              "ec2messages:GetMessages",
+              "ec2messages:SendReply"
+            ],
+            "Resource": "*"
+          }
+        ]
+      },
+      "pause_before_ssm": "30s"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": [
+        "sudo yum -y update --security",
+        "sudo yum remove -y dpkg"
+      ]
+    },
+    {
+      "type": "file",
+      "source": "./setup/",
+      "destination": "/tmp/"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "sudo chmod u+x /tmp/install-efa.sh",
+        "sudo /tmp/install-efa.sh {{user `efa_version`}}"
+      ]
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "sudo chmod u+x /tmp/install-cuda.sh",
+        "sudo /tmp/install-cuda.sh {{user `nvidia_driver_version`}} {{user `fabric_manager_version`}} {{user `cuda_toolkit_version`}}"
+      ]
+    },
+    {
+      "type": "shell",
+      "expect_disconnect": true,
+      "valid_exit_codes": [0, 2300218],
+      "inline": [
+        "sudo chmod u+x /tmp/install-nccl.sh",
+        "sudo /tmp/install-nccl.sh {{user `hwloc_version`}} {{user `aws_ofi_nccl_version`}} {{user `nccl_version`}} {{user `nccl_test_version`}}"
+      ]
+    }
+  ]
+}

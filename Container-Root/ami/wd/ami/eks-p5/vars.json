@@ -1,0 +1,18 @@
+{
+  "eks_version": "1.27",
+  "aws_region": "us-west-2",
+  "instance_type": "p5.48xlarge",
+  "volume_size_gb": "40",
+  "efa_version": "1.26.0",
+  "nvidia_driver_version": "535.54.03",
+  "fabric_manager_version": "535.54.03",
+  "cuda_toolkit_version": "12-2",
+  "hwloc_version": "2.9.2",
+  "aws_ofi_nccl_version": "1.7.0",
+  "nccl_version": "master",
+  "nccl_test_version": "master",
+  "encrypt_boot": "false",
+  "name": "eks-p5",
+  "public_ip": "true",
+  "ssh_interface": "session_manager"
+}

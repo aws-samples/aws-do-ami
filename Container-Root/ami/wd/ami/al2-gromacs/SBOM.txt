@@ -1,0 +1,10 @@
+Software Bill of Materials (SBOM) for al2-gromacs Amazon Machine Image (AMI)
+
+------
+GROMACS v2021.4 - LGPL-2.1 License - https://github.com/gromacs/gromacs
+------
+CEA HPC Environment Modules - GPL-2.0 License - https://github.com/cea-hpc/modules
+------
+Intel MPI - Free Runtime License - https://www.intel.com/content/www/us/en/developer/articles/troubleshooting/intel-mpi-library-licensing-faq.html
+------
+

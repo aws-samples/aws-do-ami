@@ -1,0 +1,106 @@
+{
+  "variables": {
+    "region": "us-west-2",
+    "flag": "eks-1.27-efa-gpu",
+    "build_ami": "ami-03a69af4c70e5fb85",
+    "latest_build_ami": "ami-078e3447baec5acfc",
+    "efa_pkg": "aws-efa-installer-latest.tar.gz",
+    "nvidia_version": "525.60.13"
+  },
+  "builders": [{
+    "type": "amazon-ebs",
+    "region": "{{user `region`}}",
+    "source_ami": "{{user `build_ami`}}",
+    "instance_type": "g5.8xlarge",
+    "run_tags": {
+        "Name": "{{user `flag`}}-{{user `nvidia_version`}}-{{timestamp}}"
+    },
+    "ssh_username": "ec2-user",
+    "ami_name": "aws_{{user `flag`}}_{{user `nvidia_version`}}-{{timestamp}}",
+    "launch_block_device_mappings":[{
+      "delete_on_termination": true,
+      "device_name": "/dev/xvda",
+      "volume_size": 100,
+      "throughput": 1000,
+      "iops": 10000,
+      "volume_type": "gp3"
+    }]
+  }],
+  "provisioners": [{
+    "type": "shell",
+    "inline_shebang": "/bin/bash -xe",
+    "expect_disconnect": true,
+    "inline": [
+      "sudo yum update -y",
+      "sudo yum install -y gcc10 kernel-devel-$(uname -r) kernel-headers-$(uname -r) amazon-cloudwatch-agent python3 yum-utils ldconfig cmake dkms mdadm git htop hwloc iftop kernel-tools rpm-build rpmdevtools numactl parallel pigz python3-distutils wget make check check-devel subunit subunit-devel rsync",
+      "sudo yum groupinstall 'Development Tools' -y",
+      "sudo amazon-linux-extras install lustre2.10 epel kernel-5.10 -y",
+      "sudo sed -i 's/GRUB_CMDLINE_LINUX=nouveau.modeset=0 rd.driver.blacklist=nouveau/\\nGRUB_CMDLINE_LINUX=\"nouveau.modeset=0 rd.driver.blacklist=nouveau\"/g' /etc/default/grub",
+      "echo 'blacklist nouveau' | sudo tee /etc/modprobe.d/nvidia-graphics-drivers.conf",
+      "echo 'blacklist lbm-nouveau' | sudo tee -a /etc/modprobe.d/nvidia-graphics-drivers.conf",
+      "echo 'alias nouveau off' | sudo tee -a /etc/modprobe.d/nvidia-graphics-drivers.conf",
+      "echo 'alias lbm-nouveau off' | sudo tee -a /etc/modprobe.d/nvidia-graphics-drivers.conf",
+      "sudo shutdown -r now"]
+    },
+    {
+    "type": "shell",
+    "inline_shebang": "/bin/bash -xe",
+    "inline": [
+      "sudo wget -O /tmp/NVIDIA-Linux-driver.run 'https://us.download.nvidia.com/tesla/{{user `nvidia_version`}}/NVIDIA-Linux-x86_64-{{user `nvidia_version`}}.run'",
+      "sudo CC=gcc10-cc sh /tmp/NVIDIA-Linux-driver.run -q -a --ui=none"]
+    },
+    {
+    "type": "shell",
+    "inline_shebang": "/bin/bash -xe",
+    "inline": [
+      "sudo curl -O https://developer.download.nvidia.com/compute/nvidia-driver/redist/fabricmanager/linux-x86_64/fabricmanager-linux-x86_64-{{user `nvidia_version`}}-archive.tar.xz",
+      "sudo tar xf fabricmanager-linux-x86_64-{{user `nvidia_version`}}-archive.tar.xz -C /tmp",
+      "sudo rsync -al /tmp/fabricmanager-linux-x86_64-{{user `nvidia_version`}}-archive/ /usr/ --exclude LICENSE",
+      "sudo mv /usr/systemd/nvidia-fabricmanager.service /usr/lib/systemd/system",
+      "sudo systemctl enable nvidia-fabricmanager"]
+    },
+    {
+    "type": "shell",
+    "inline_shebang": "/bin/bash -xe",
+    "inline": [
+      "distribution=$(. /etc/os-release;echo $ID$VERSION_ID)",
+      "curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.repo | sudo tee /etc/yum.repos.d/nvidia-container-toolkit.repo",
+      "sudo yum update -y",
+      "sudo yum install -y nvidia-container-toolkit"]
+    },
+    {
+    "type": "shell",
+    "inline_shebang": "/bin/bash -xe",
+    "inline": [
+      "sudo curl -O https://efa-installer.amazonaws.com/aws-efa-installer-latest.tar.gz",
+      "sudo tar -xf aws-efa-installer-latest.tar.gz && cd aws-efa-installer",
+      "sudo ./efa_installer.sh -y",
+      "echo 'kernel.yama.ptrace_scope=0' | sudo tee -a /etc/sysctl.conf",
+      "# COMMENTED echo 'vm.nr_hugepages=2048' | sudo tee -a /etc/sysctl.conf"]
+    },
+    {
+    "type": "shell",
+    "inline_shebang": "/bin/bash -xe",
+    "inline": [
+      "echo 'net.core.default_qdisc = fq' | sudo tee -a /etc/sysctl.conf",
+      "echo 'net.ipv4.tcp_congestion_control = bbr' | sudo tee -a /etc/sysctl.conf",
+      "echo 'net.ipv4.tcp_timestamps = 0' | sudo tee -a /etc/sysctl.conf",
+      "echo 'net.core.rmem_max = 67108864' | sudo tee -a /etc/sysctl.conf",
+      "echo 'net.core.wmem_max = 67108864' | sudo tee -a /etc/sysctl.conf",
+      "echo 'net.ipv4.tcp_rmem = 4096 87380 67108864' | sudo tee -a /etc/sysctl.conf",
+      "echo 'net.ipv4.tcp_wmem = 4096 65536 67108864' | sudo tee -a /etc/sysctl.conf",
+      "sudo sysctl -p"]
+    },
+    {
+      "type": "file",
+      "source": "./containerd/config.toml",
+      "destination": "/tmp/config.toml"
+    },
+    {
+    "type": "shell",
+    "inline_shebang": "/bin/bash -xe",
+    "inline": [
+      "sudo mv /tmp/config.toml /etc/eks/containerd/containerd-config.toml"]
+    }
+  ]
+}

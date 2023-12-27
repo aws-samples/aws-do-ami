@@ -3,7 +3,7 @@
 # AWS do AMI (aws-do-ami) - <br/>Create and manage your Amazon Machine Images (AMI) using the [do-framework](https://bit.ly/do-framework) 
 
 ## Overview
-[Amazon Machine Images (AMI)](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.html) are machine images that contain the information required to launch [EC2 instances](https://aws.amazon.com/ec2/). This project builds a container that has [HashiCorp Packer](https://www.packer.io/) and utility scripts that help with building and management of Amazon Machine Images. Example image definitions are provided as well. The goal of this project is to make building and management of Amazon Machine Images easy by following the principles of the [do-framework](https://bit.ly/do-framework).
+[Amazon Machine Images (AMI)](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.html) are machine images that contain the information required to launch [EC2 instances](https://aws.amazon.com/ec2/). This project builds a container that has [HashiCorp Packer](https://www.packer.io/) and utility scripts that help with building and management of Amazon Machine Images. Example image definitions as well as references to other related projects are provided. The goal of this project is to make building and management of Amazon Machine Images easy by following the principles of the [do-framework](https://bit.ly/do-framework).
 
 ## Prerequisites
 
@@ -29,9 +29,9 @@ Run the `./exec.sh` script to open a shell in the `aws-do-ami` container. All to
 
 ### Utility scripts
 
-* `ami-create.sh [name]` - create an ami from the definition in folder `wd/ami/<name>`
+* `ami-create.sh [name]` - create an ami from the packer reciple in folder `/wd/packer/<name>`
 * `ami-delete.sh <AMI_ID>` - deregister specified ami from account 
-* `ami-dir.sh` - list local ami definitions 
+* `ami-dir.sh` - list local packer-based ami recipes 
 * `ami-list.sh` - list ami's owned by the current AWS account 
 * `aws-config.sh` - configure aws client
 * `ec2-launch.sh` - launch an EC2 instance from ami as configured in `wd/conf/ec2.conf`
@@ -43,6 +43,8 @@ Run the `./exec.sh` script to open a shell in the `aws-do-ami` container. All to
 * `keypair-create.sh [KEYPAIR_NAME]` - create ssh key pair with specified name
 * `keypair-delete.sh [KAYPAIR_NAME]` - delete the specified key pair
 * `keypair-list.sh` - list available ssh key pairs
+* `packer-dir.sh` - list local packer-based ami recipes in tree format
+* `project-dir.sh` - list in tree format well-known other projects for building ami's
 * `sg-create.sh` - create a security group and allow SSH access from the current IP address
 * `sg-delete.sh <sg_id>` - delete the specified security group
 * `sg-list.sh` - list available security groups
@@ -55,17 +57,82 @@ Run the `./exec.sh` script to open a shell in the `aws-do-ami` container. All to
 
 Execute the `./stop.sh` script to stop and remove the `aws-do-ami` container.
 
+## Workflow
+
+As previously described, this project builds a container that is equipped with tools needed for creating AMI's on AWS. It includes a library of AMI recipes and references to other projects for building AMI's, all useable within the container. A typical workflow is described below:
+
+1. Clone the project 
+```bash
+git clone https://github.com/aws-samples/aws-do-ami
+cd aws-do-ami
+```
+2. Build the `aws-do-ami` container image
+```bash
+./build.sh
+```
+3. Run the `aws-do-ami` container
+```bash
+./run.sh
+```
+4. Open a shell into the container
+```bash
+./exec.sh
+```
+5. Configure AWS credentials
+```bash
+./aws-config.sh
+```
+6. List available AMI recipes
+```bash
+./packer-dir.sh
+```
+Advanced users may customize the existing or create their own ami recipes in the working directory `wd/packer`.
+
+7. Build selected AMI by recipe name
+```bash
+./ami-create.sh <ami_recipe_name>
+```
+8. Repeat steps 6 and 7 as needed
+
+Alternatively, other well-known projects for building AMIs can be cloned and used within the `aws-do-ami` container.
+You may list these projects in place of step 6 by using the `./project-dir.sh` command. To select one of the projects, change your current directory `cd project/<path>`, then run the corresponding `clone-` script.
+
+Example:
+```
+./project-dir.sh
+project
+└── github.com
+    ├── aws-samples
+    │   └── awsome-distributed-training
+    ├── awslabs
+    │   └── amazon-eks-ami
+    └── clowdhaus
+        └── amazon-eks-gpu-ami
+```
+
+```
+cd project/github.com/aws-eks-ami
+./clone-aws-eks-ami.sh
+```
+
+Refer to the README of your selected project for instructions about building AMIs. The tools needed by the project should already be included in the `aws-do-ami` container. Advanced users may customize these projects or add new ones. If any new tools are needed, they can be added to the [`setup.sh`](Container-Root/setup.sh) script of the `aws-do-ami` project. Changes to this script take effect after the container is built using `./build.sh` and restarted using `./stop.sh` and `./run.sh`. 
+
 ## Security
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
 
 ## License
 
-This library is licensed under the MIT-0 License. See the LICENSE file.
+This project is licensed under the MIT-0 License. See the LICENSE file.
 
 ## References
 * [Docker](https://docker.com)
 * [do-framework](https://bit.ly/do-framework)
+* [depend-on-docker](https://bit.ly/do-docker-project)
 * [Amazon Machine Images](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.html)
 * [Amazon EC2 Instance Types](https://aws.amazon.com/ec2/instance-types/)
-
+* [Packer](https://www.packer.io/)
+* [Ansible](https://github.com/ansible/ansible)
+* [awsome-distributed-training](https://github.com/aws-samples/awsome-distributed-training)
+* [amazon-eks-ami](https://github.com/awslabs/amazon-eks-ami)
+* [amazon-eks-gpu-ami](https://github.com/clowdhaus/amazon-eks-gpu-ami)

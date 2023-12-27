@@ -1,7 +1,0 @@
-Kubernetes Image based on Ubuntu 20.04 for P5.48xlarge EC2 instance type
-
-Software Bill of Materials
---------------------------
-
-
-

@@ -7,11 +7,12 @@
     {
       "type": "amazon-ebs",
       "region": "{{user `aws_region`}}",
+      "subnet_id": "{{user `subnet_id`}}",
       "instance_type": "{{user `instance_type`}}",
       "source_ami_filter": {
         "filters": {
           "virtualization-type": "hvm",
-          "name": "amazon-eks-gpu-node-{{user `eks_version`}}*",
+          "name": "amazon-eks-gpu-node-{{user `eks_version`}}-{{user `ami_version`}}*",
           "architecture": "x86_64",
           "root-device-type": "ebs"
         },
@@ -21,12 +22,12 @@
         "most_recent": true
       },
       "ssh_username": "ec2-user",
-      "ami_name": "{{user `name`}}-efa-{{ user `eks_version`}}-{{isotime \"20130915120000\" | clean_resource_name}}",
+      "ami_name": "{{user `name`}}-{{user `eks_version`}}-nvidia-{{user `nvidia_driver_version`}}-nccl-{{user `nccl_version`}}-efa-{{user `efa_version`}}-{{isotime \"20130915120000\" | clean_resource_name}}",
       "shutdown_behavior": "terminate",
       "associate_public_ip_address": "{{user `public_ip`}}",
       "encrypt_boot": "{{user `encrypt_boot`}}",
       "tags": {
-          "Name": "{{user `name`}}-efa-{{user `efa_version`}}",
+          "Name": "{{user `name`}}-{{user `eks_version`}}-efa-{{user `efa_version`}}",
           "Env": "{{user `env`}}",
           "OS": "Amazon Linux 2",
           "Source_AMI": "{{ .SourceAMI }}"
@@ -107,24 +108,17 @@
     {
       "type": "shell",
       "inline": [
-        "sudo chmod u+x /tmp/install-efa.sh",
-        "sudo /tmp/install-efa.sh {{user `efa_version`}}"
-      ]
-    },
-    {
-      "type": "shell",
-      "inline": [
-        "sudo chmod u+x /tmp/install-cuda.sh",
-        "sudo /tmp/install-cuda.sh {{user `nvidia_driver_version`}} {{user `fabric_manager_version`}} {{user `cuda_toolkit_version`}}"
-      ]
-    },
-    {
-      "type": "shell",
-      "expect_disconnect": true,
-      "valid_exit_codes": [0, 2300218],
-      "inline": [
-        "sudo chmod u+x /tmp/install-nccl.sh",
-        "sudo /tmp/install-nccl.sh {{user `hwloc_version`}} {{user `aws_ofi_nccl_version`}} {{user `nccl_version`}} {{user `nccl_test_version`}}"
+        "sudo chmod u+x /tmp/install.sh",
+	"echo EFA_VERSION={{user `efa_version`}} > /tmp/install-versions.sh",
+	"echo NVIDIA_DRIVER_VERSION={{user `nvidia_driver_version`}} >> /tmp/install-versions.sh",
+	"echo FABRIC_MANAGER_VERSION={{user `fabric_manager_version`}} >> /tmp/install-versions.sh",
+	"echo CUDA_TOOLKIT_VERSION={{user `cuda_toolkit_version`}} >> /tmp/install-versions.sh",
+	"echo HWLOC_VERSION={{user `hwloc_version`}} >> /tmp/install-versions.sh",
+        "echo AWS_OFI_NCCL_VERSION={{user `aws_ofi_nccl_version`}} >> /tmp/install-versions.sh",
+       	"echo NCCL_VERSION={{user `nccl_version`}} >> /tmp/install-versions.sh",
+        "echo NCCL_TEST_VERSION={{user `nccl_test_version`}} >> /tmp/install-versions.sh",
+	"cat /tmp/install-versions.sh",
+        "sudo /tmp/install.sh"
       ]
     }
   ]

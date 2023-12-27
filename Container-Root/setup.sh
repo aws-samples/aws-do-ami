@@ -15,7 +15,7 @@ fi
 echo ""
 echo "Installing basic tools ..."
 apt-get update
-apt-get install -y vim nano jq less gettext-base
+apt-get install -y vim nano jq less gettext-base tree
 
 # Install AWS CLI v2
 echo ""
@@ -35,6 +35,9 @@ echo "${PACKER_VERSION_SHA256SUM}  packer_${PACKER_VERSION}_linux_amd64.zip" > c
 unzip packer_${PACKER_VERSION}_linux_amd64.zip
 ln -s $PWD/packer /usr/sbin/packer
 rm -f packer_${PACKER_VERSION}_linux_amd64.zip
+
+# Install Ansible
+pip install ansible
 
 # Install Session Manager Plugin
 echo "Installing Session Manager Plugin ..."

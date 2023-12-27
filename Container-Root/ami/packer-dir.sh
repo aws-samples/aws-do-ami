@@ -6,7 +6,8 @@
 ######################################################################
 
 echo ""
-echo "Note: you can also run ./packer-dir.sh"
-echo "Listing packer recipes from /wd/packer ..."
+echo "Listing contents of packer ..."
 echo ""
-ls -alh /wd/packer
+#ls -alh /wd/packer
+tree packer -L 1 -d
+

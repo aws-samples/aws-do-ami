@@ -21,7 +21,7 @@ else
 
 	OS_TYPE=amzn2
 
-	pushd /wd/ami/$DIR_NAME
+	pushd /wd/packer/$DIR_NAME
 
 	if [ -f ./vars.json ]; then
 		VARS_OPT="-var-file vars.json"

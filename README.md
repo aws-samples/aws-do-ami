@@ -3,7 +3,7 @@
 # AWS do AMI (aws-do-ami) - <br/>Create and manage your Amazon Machine Images (AMI) using the [do-framework](https://bit.ly/do-framework) 
 
 ## Overview
-[Amazon Machine Images (AMI)](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.html) are machine images that contain the information required to launch [EC2 instances](https://aws.amazon.com/ec2/). This project builds a container that has [HashiCorp Packer](https://www.packer.io/) and utility scripts that help with building and management of Amazon Machine Images. Example image definitions as well as references to other related projects are provided. The goal of this project is to make building and management of Amazon Machine Images easy by following the principles of the [do-framework](https://bit.ly/do-framework).
+[Amazon Machine Images (AMI)](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.html) are machine images that contain the information required to launch [EC2 instances](https://aws.amazon.com/ec2/). This project builds a container that is equipped with [HashiCorp Packer](https://www.packer.io/), other tools and utility scripts that help with building and management of Amazon Machine Images. Example AMI recipes as well as references to other related projects are provided. The goal of this project is to make building and management of Amazon Machine Images easy by following the principles of the [do-framework](https://bit.ly/do-framework).
 
 ## Prerequisites
 
